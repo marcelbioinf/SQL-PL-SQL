@@ -1,0 +1,97 @@
+--JA JESTEM B--
+--ZAD1--
+SELECT * from BIO145162.pracownicy; --nie działa
+
+--ZAD2--
+GRANT Select ON pracownicy  --udzielam dostęp damianowi
+TO BIO145162;
+
+--ZAD3--
+SELECT * from BIO145162.pracownicy; --teraz działa
+
+--ZAD4--
+GRANT UPDATE(placa_pod, placa_dod) ON pracownicy TO BIO145162;
+
+--ZAD5--
+UPDATE BIO145162.pracownicy
+SET placa_pod =  placa_pod * 2;
+--WHERE nazwisko like 'MORZY';
+
+--ZAD6-- 
+CREATE SYNONYM pra for BIO145162.pracownicy;
+UPDATE pra
+SET placa_dod =  700;
+
+--ZAD7--
+SELECT * from pra;
+
+--ZAD8--
+select owner, table_name, grantee, grantor, privilege
+from user_tab_privs;
+
+select table_name, grantee, grantor, privilege
+from user_tab_privs_made;
+
+select table_name, column_name, grantee, grantor, privilege
+from user_col_privs_made;
+
+select owner, table_name, column_name, grantee, grantor, privilege
+from user_col_privs;
+
+--ZAD9--
+--A--:
+REVOKE UPDATE ON pracownicy FROM BIO145159;
+--B (JA) --:
+UPDATE pra
+SET placa_dod =  900;
+
+--ZAD10--
+CREATE ROLE PAJAC;
+GRANT select, update ON pracownicy TO PAJAC;
+GRANT PAJAC TO BIO145162;
+
+--ZAD11--
+UPDATE BIO145162.pracownicy  --NIE DZIALA
+SET placa_dod =  1000;
+
+--ZAD12-
+SET ROLE rola_dla_marcela identified by test; --DZAILA
+UPDATE BIO145162.pracownicy
+SET placa_dod =  1000;
+
+select granted_role, admin_option from user_role_privs
+where username = 'BIO145159';
+select role, owner, table_name, column_name, privilege
+from role_tab_privs;
+
+--ZAD13--
+SELECT * from BIO145162.PRACOWNICY; --DZAIŁA
+
+--ZAD14--
+SELECT * from BIO145162.PRACOWNICY; --NIE DZAIŁA po wylogowaniu
+
+--ZAD15--
+--dziala mu
+
+--ZAD18--
+REVOKE update ON pracownicy from pajac;
+
+--ZAD19--
+DROP ROLE PAJAC;
+
+--ZAD20--
+GRANT SELECT ON BIO145162.pracownicy TO BIO136669;
+
+--ZAD21--
+
+--ZAD22--
+--A--
+REVOKE select ON pracownicy from  BIO136669; -- nie działą
+REVOKE select ON pracownicy from  BIO145159; -- odbiera mi i bogumile automatycznie
+
+--ZAD23--
+--A--
+CREATE VIEW prac20 as
+select nazwisko, placa_pod
+from pracownicy
+where id_zesp = 20;

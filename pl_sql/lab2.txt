@@ -1,0 +1,134 @@
+--@\home\ student \Pulpit\Pldemobld. sgl
+SET SERVEROUTPUT ON
+
+--ZAD1--
+DECLARE
+vTekst char(20);
+vLiczba number(7,3);
+BEGIN
+vTekst := 'Witaj, Świecie!';
+vLiczba := 1000.456;
+DBMS_OUTPUT.PUT_LINE(vTekst || vLiczba);
+END;
+
+--LUB--
+DECLARE
+vTekst varchar (20) := 'Witaj, swieciel';
+vLiczba number (7,3) := 1000.456;
+BEGIN
+DBMS_OUTPUT.PUT_LINE(vTekst);
+DBMS_OUTPUT.PUT_LINE(vLiczba);
+END;
+
+--ZAD2--
+DECLARE
+vTekst varchar(50) :='Witar, Swiecie!';
+vLiczba number (20,3) := 1000.456;
+BEGIN
+VLiczba := vLiczba + power (10, 15);
+vTekst := vTekst || 'Witaj, nowy dniu!';
+DBMS_OUTPUT.PUT_LINE(vTekst);
+DBMS_OUTPUT.PUT_LINE(vLiczba);
+END;
+
+--ZAD3--
+DECLARE
+Liczba_uno number(9,7) := 10.2356000;
+Liczba_due number(8,7) := 0.0000001;
+Liczba_tre number(9,7);
+BEGIN
+Liczba_tre := Liczba_uno + Liczba_due;
+DBMS_OUTPUT.PUT_LINE (Liczba_tre);
+END;
+
+--ZAD4--
+DECLARE
+cpi number(3,2) := 3.14;
+pole number(3,1);
+obwod number(3,1);
+promien number(1) := &in;
+BEGIN
+pole := cpi * power(promien, 2);
+obwod := 2 * cpi * promien;
+DBMS_OUTPUT.PUT_LINE(pole);
+DBMS_OUTPUT.PUT_LINE (obwod);
+END;
+
+--ZAD5--
+DECLARE
+vNazwisko Pracownicy.nazwisko%TYPE;
+vEtat Pracownicy.etat%TYPE;
+BEGIN
+    select nazwisko, etat 
+    into vNazwisko, vEtat
+    from PRACOWNICY
+    where placa_pod = (
+        select max(placa_pod)
+        from pracownicy);
+    DBMS_OUTPUT.PUT_LINE('Najlepiej zarabia pracownik: '|| vNazwisko);
+    DBMS_OUTPUT.PUT_LINE('Pracuje on jako: '|| vEtat);
+END;
+
+--ZAD6--
+DECLARE
+vPracownik PRACOWNICY%ROWTYPE;
+BEGIN
+    select nazwisko, etat 
+    into vPracownik.nazwisko, vPracownik.etat
+    from PRACOWNICY
+    where placa_pod = (
+        select max(placa_pod)
+        from pracownicy);
+    DBMS_OUTPUT.PUT_LINE('Najlepiej zarabia pracownik: '|| vPracownik.nazwisko);
+    DBMS_OUTPUT.PUT_LINE('Pracuje on jako: '|| vPracownik.etat);
+END;
+
+--ZAD7--
+DECLARE
+    SUBTYPE tPieniadze is NUMBER(7,2);
+    vKwota tPieniadze;
+    vNazwisko Pracownicy.nazwisko%TYPE;
+BEGIN
+    select nazwisko, placa_pod * 12
+    into vNazwisko, vKwota
+    from pracownicy
+    where nazwisko like 'SLOWINSKI';
+     DBMS_OUTPUT.PUT_LINE('Pracownik '|| vNazwisko || ' zarabia rocznie ' || vKwota);
+END;
+
+--ZAD8--
+DECLARE
+    seconds date;
+BEGIN
+    seconds := sysdate;
+    LOOP
+        exit when sysdate = seconds + interval '25' second;
+    end LOOP;
+    DBMS_OUTPUT.PUT_LINE('Nadeszla 25 sekunda!');
+END;
+
+--ZAD9--
+DECLARE
+    val number(20) := &in;
+    res number(35) := 1;
+n number(20) := val;
+BEGIN
+    WHILE val > 1 LOOP
+        res := res * val;
+        val := val - 1;
+    END LOOP;
+    DBMS_OUTPUT.PUT_LINE('Silnia dla n=' || n || ' równa jest ' || res);
+END;
+
+
+--ZAD10--
+with rws as(
+select next_day(to_date('sty-2022','mon-yyyy')-1,'pt')+(rownum-1)*7 dy
+    from dual
+  connect by level <= (ceil((last_day(to_date('gru-2100','mon-yyyy'))-
+                       next_day(to_date('sty-2022','mon-yyyy')-1,'pt'))/7))
+)
+select dy 
+from rws
+where extract(day from dy) = 13;
+

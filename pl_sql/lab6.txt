@@ -1,0 +1,73 @@
+--ZAD1--
+CREATE table Projekty (
+id_projektu NUMBER(4) CONSTRAINT id_con PRIMARY KEY,
+opis_projektu VARCHAR(20) CONSTRAINT opis_con NOT NULL UNIQUE,
+data_rozpoczecia date default current_date,
+data_zakonczenia date,
+budzet number (7,2),
+kierownik number (4) CONSTRAINT kier_con NOT NULL REFERENCES pracownicy(id_prac),
+typ_projektu VARCHAR(10) CONSTRAINT typ_con CHECK(typ_projektu IN ('A10', 'B12', 'C2', 'C3')),
+CONSTRAINT check_dat CHECK(data_zakonczenia > data_rozpoczecia)
+);
+
+--ZAD2-
+Create Sequence id_seg START WITH 100 INCREMENT by 10;
+
+--ZAd3--
+INSERT INTO Projekty (id_projektu, opis_projektu, data_zakonczenia, budzet, kierownik, typ_projektu)
+VALUES (ID_SEQ.nextval, 'Uczenie Maszynowe', to_date('30/11/2022', 'DD/MM/YYYY'), 25000, 150, 'A101' );
+
+INSERT INTO Projekty (id_projektu, opis_projektu, data_zakonczenia, budzet, kierownik, typ_projektu)
+VALUES (ID_SEQ.nextval, 'Artificial Int', to_date('01/12/2022', 'DD/MM/YYYY'), 40000, 150, 'C2');
+select * from PROJEKTY;
+
+--ZAD4-
+select *
+from USER_INDEXES i 
+where i.table_name = 'PRACOWNICY'
+OR i.table_name = "PROJEKTY";
+
+--ZAD5--
+ALTER TABLE PRACOWNICY
+ADD CONSTRAINT uk_nazwisko unique(nazwisko);
+
+drop index uk_nazwisko;
+
+--ZAD6--
+CREATE INDEX ind_2  on pracownicy(id_prac, etat, placa_pod)
+COMPRESS 2;
+
+select *
+from USER_INDEXES i 
+where i.table_name = 'PRACOWNICY';
+
+--ZAD7--
+ALTER TABLE pracownicy 
+ADD plec CHAR(1) CONSTRAINT typ_plec CHECK(plec IN ('M', 'K'));
+
+CREATE BITMAP INDEX ind_3 on pracownicy(plec);
+
+--ZAD8--
+CREATE BITMAP INDEX JOIN_IND on zespoly(nazwa)
+FROM zespoly z, pracownicy p
+where z.id_zesp = p.id_zesp;
+
+--ZAD9--
+select *
+from pracownicy
+where upper(nazwisko)='KOWALSKI'
+and placa_pod + nvl(placa_dod,0) > 2000;
+
+create index f_ind1 on PRACOWNICY(UPPER(nazwisko));
+create index f_ind2 on PRACOWNICY(nvl(placa_dod, 0));
+
+--ZAD10--
+CREATE table PRAC_ZESP_IOT (
+id_projektu NUMBER(6) CONSTRAINT id_con PRIMARY KEY,
+nazwisko VARCHAR2(20) CONSTRAINT opis_con NOT NULL,
+nazwa_zespolu VARCHAR2(20)
+)
+ORGANIZATION INDEX
+PCTTHRESHOLD 20
+OVERFLOW TABLESPACE bio_2017
+INCLUDING nazwa_zespolu;

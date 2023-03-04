@@ -1,0 +1,145 @@
+SET SERVEROUTPUT ON;
+
+--ZAD1
+DECLARE
+    CURSOR prac IS
+        SELECT nazwisko, zatrudniony
+        FROM PRACOWNICY
+        where etat like 'ASYSTENT';
+BEGIN
+    for pra in prac LOOP
+        DBMS_output.put_line(pra.nazwisko || ' zatrudniony od ' || pra.zatrudniony);
+    END LOOP;
+END;
+--LUB
+DECLARE
+    CURSOR prac IS
+        SELECT nazwisko, zatrudniony
+        FROM PRACOWNICY
+        where etat like 'ASYSTENT';
+    vnazwisko pracownicy.nazwisko%TYPE;
+    vzatrudniony pracownicy.zatrudniony%TYPE;
+BEGIN
+    OPEN prac;
+    LOOP
+       FETCH prac into vnazwisko, vzatrudniony;
+       EXIT WHEN prac%NOTFOUND;
+       DBMS_output.put_line(vnazwisko || ' zatrudniony od '  || vzatrudniony);
+    END LOOP;
+    CLOSE prac;
+END;
+
+--ZAD2
+DECLARE
+    CURSOR prac IS
+        SELECT nazwisko
+        FROM PRACOWNICY
+        order by placa_pod desc
+        FETCH FIRST 3 ROWS ONLY;
+BEGIN
+    for pra in prac LOOP
+        DBMS_output.put_line(prac%rowcount|| ': ' || pra.nazwisko);
+    END LOOP;
+END;
+--LUB
+DECLARE
+    CURSOR prac IS
+        SELECT nazwisko
+        FROM PRACOWNICY
+        order by placa_pod desc;
+    rnazw pracownicy.nazwisko%TYPE;
+BEGIN
+    OPEN prac;
+    LOOP
+       FETCH prac into rnazw;
+       EXIT WHEN prac%rowcount = 4;
+       DBMS_output.put_line(prac%rowcount || ': ' || rnazw );
+    END LOOP;
+    CLOSE prac;
+END;      
+
+--ZAD3
+DECLARE
+    CURSOR prac IS
+        SELECT nazwisko, placa_pod, zatrudniony
+        FROM PRACOWNICY
+        order by nazwisko
+        FOR UPDATE;
+BEGIN
+    for vpra in prac LOOP
+        IF TO_CHAR(vpra.zatrudniony, 'd') = 1 THEN
+           UPDATE PRACOWNICY
+           SET placa_pod = placa_pod * 1.2
+           where current of prac;
+        END IF;
+    END LOOP;
+END;
+
+
+--ZAD4
+DECLARE
+    CURSOR prac IS
+        SELECT etat, nazwa
+        FROM PRACOWNICY JOIN zespoly USING(id_zesp)
+        order by nazwisko
+        FOR UPDATE;
+BEGIN
+    for vpra in prac LOOP
+        IF vpra.nazwa = 'ALGORYTMY' THEN
+           UPDATE PRACOWNICY
+           SET placa_dod = placa_dod + 100
+           where current of prac;
+        ELSIF vpra.nazwa = 'ADMINISTRACJA' THEN
+           UPDATE PRACOWNICY
+           SET placa_dod = placa_dod + 150
+           where current of prac;
+        ELSIF vpra.etat = 'STAZYSTA' THEN
+            DELETE 
+            from pracownicy
+            where current of prac;
+        END IF;
+    END LOOP;
+END;
+
+
+
+--ZAD5
+CREATE OR REPLACE PROCEDURE PokazPracownikowEtatu
+    (pNazwa IN VARCHAR) IS
+    CURSOR prac IS (select nazwisko from pracownicy where etat like pNazwa);
+BEGIN
+    for vpra in prac LOOP
+        DBMS_output.put_line(vpra.NAZWISKO);
+    END LOOP;
+END PokazPracownikowEtatu;
+
+EXEC PokazPracownikowEtatu('PROFESOR');
+
+
+--ZAD6
+CREATE OR REPLACE PROCEDURE RaportKadrowy IS
+    srednia number := 0;
+    vnazwisko varchar(30);
+    vpensja number;
+    CURSOR Cetaty IS (select nazwa from etaty);
+    CURSOR Cpracownicy (vetat varchar default '--') IS (select nazwisko, placa_pod from pracownicy where etat like vetat);
+BEGIN
+    for Cetat in Cetaty LOOP
+        DBMS_output.put_line('Etat: ' || Cetat.nazwa);
+        DBMS_output.put_line('----------------------');
+        OPEN Cpracownicy(Cetat.nazwa);
+            LOOP
+                FETCH Cpracownicy into vnazwisko, vpensja;
+                EXIT WHEN Cpracownicy%NOTFOUND;
+                DBMS_output.put_line(Cpracownicy%rowcount || ': ' || vnazwisko || ', pensja: ' || vpensja);
+                srednia := srednia + vpensja;
+            END LOOP;
+            DBMS_output.put_line('Liczba pracownikow: ' || Cpracownicy%rowcount );
+            DBMS_output.put_line('Srednia pensja: ' || srednia / Cpracownicy%rowcount);
+            DBMS_output.put_line('');
+            srednia := 0;
+        CLOSE Cpracownicy;
+    END LOOP;
+END RaportKadrowy;
+
+EXEC RaportKadrowy();

@@ -1,0 +1,296 @@
+--ZAD1
+CREATE OR REPLACE PROCEDURE NowyPracownik
+    (pnazwisko IN VARCHAR,
+     pnzespolu IN VARCHAR,
+     pnszefa IN VARCHAR,
+     pplaca_pod IN NUMBER,
+     pzatrudniony IN DATE DEFAULT SYSDATE,
+     petat IN VARCHAR DEFAULT 'STAZYSTA') IS
+BEGIN  
+    INSERT INTO pracownicy (nazwisko, id_prac, id_zesp, id_szefa, placa_pod, zatrudniony, etat)
+    VALUES(pnazwisko, PRAC_SEQ.nextval, (select id_zesp from zespoly where nazwa like pnzespolu), 
+          (select id_prac from pracownicy where nazwisko like pnszefa), pplaca_pod, pzatrudniony, petat);
+END NowyPracownik;
+
+EXEC NowyPracownik('DYNDALSKI', 'ALGORYTMY','BLAZEWICZ', 250);
+
+select * from pracownicy;
+
+
+--ZAD2
+CREATE OR REPLACE FUNCTION PlacaNetto
+(plbrutto IN number,
+ podatek IN number DEFAULT 20)
+ RETURN number is netto number; 
+BEGIN
+    netto := (100 - podatek)/100 * plbrutto;
+    return netto;
+END PlacaNetto;
+
+SELECT nazwisko, placa_pod AS BRUTTO,
+ PlacaNetto(placa_pod, 35) AS NETTO
+ FROM Pracownicy WHERE etat = 'PROFESOR' ORDER BY nazwisko;
+
+
+ --ZAD3
+CREATE OR REPLACE FUNCTION Silnia
+(numin IN number)
+RETURN number is 
+    val number := 1;
+    nnum number := numin;
+BEGIN
+    WHILE nnum > 1 LOOP
+        val := val * nnum;
+        nnum := nnum - 1;
+    END LOOP;
+    return val;
+END Silnia;
+
+SELECT Silnia(8) FROM Dual;
+
+
+ --ZAD4
+CREATE OR REPLACE FUNCTION SilniaRek
+(numin IN number)
+RETURN number is 
+BEGIN
+    IF numin = 1 THEN
+        RETURN numin;
+    ELSE
+        RETURN numin * SilniaRek(numin - 1);
+    END IF;
+END SilniaRek;
+
+SELECT SilniaRek(10) FROM Dual;
+
+
+ --ZAD5
+CREATE OR REPLACE FUNCTION IleLat
+(numin IN date)
+RETURN number is 
+    lata number := extract(year from numin);
+    currok number := extract(year from SYSDATE);
+BEGIN
+    lata := currok - lata;
+    RETURN lata;
+END IleLat;
+
+ SELECT nazwisko, zatrudniony, IleLat(zatrudniony) AS staz
+ FROM Pracownicy WHERE placa_pod > 1000
+ ORDER BY nazwisko;
+
+--SZYBSZA WERSJA
+CREATE OR REPLACE FUNCTION IleLat2
+(numin IN date)
+RETURN number is 
+BEGIN
+    return extract(year from SYSDATE) - extract(year from numin) ;
+END IleLat2;
+
+
+--ZAD6
+CREATE OR REPLACE PACKAGE Konwersja AS
+    FUNCTION Cels_To_Fahr(cels number)
+    RETURN number;
+    FUNCTION Fahr_To_cels(fahr number)
+    RETURN number;
+END Konwersja;
+
+CREATE OR REPLACE PACKAGE BODY Konwersja AS
+    FUNCTION Cels_To_Fahr(cels number)
+    RETURN number AS
+    BEGIN
+        return 9 / 5 * cels + 32;
+    END Cels_To_Fahr;
+    FUNCTION Fahr_To_Cels(fahr number)
+    RETURN number AS
+    BEGIN
+        return 5/ 9 * (fahr - 32);
+    END Fahr_To_Cels;
+END Konwersja;
+
+SELECT Konwersja.Fahr_To_Cels(212) AS CELSJUSZ FROM Dual;
+SELECT Konwersja.Cels_To_Fahr(0) AS FAHRENHEIT FROM Dual;
+
+
+--ZAD7
+CREATE OR REPLACE PACKAGE Zmienne AS
+    vLicznik number := 0;
+    PROCEDURE ZwiekszLicznik; 
+    PROCEDURE ZmniejszLicznik;
+    FUNCTION PokazLicznik
+    RETURN number;
+END Zmienne;
+
+
+CREATE OR REPLACE PACKAGE BODY Zmienne AS
+    PROCEDURE ZwiekszLicznik IS
+    BEGIN
+        vLicznik := vLicznik + 1;
+        DBMS_OUTPUT.PUT_LINE('Zwiekszono');
+    END ZwiekszLicznik;
+    PROCEDURE ZmniejszLicznik IS
+    BEGIN
+        vLicznik := vLicznik - 1;
+        DBMS_OUTPUT.PUT_LINE('Zmniejszono');
+    END ZmniejszLicznik;
+    FUNCTION PokazLicznik
+    RETURN number AS
+    BEGIN
+        RETURN vLicznik;
+    END PokazLicznik;
+BEGIN
+    vLicznik := 1;
+    DBMS_OUTPUT.PUT_LINE('Zainicjalizowano');
+END Zmienne;
+
+set serveroutput on
+BEGIN
+ dbms_output.put_line(Zmienne.PokazLicznik);
+ END;
+
+ BEGIN
+ Zmienne.ZwiekszLicznik;
+ DBMS_OUTPUT.PUT_LINE(Zmienne.PokazLicznik);
+ Zmienne.ZwiekszLicznik;
+ DBMS_OUTPUT.PUT_LINE (Zmienne.PokazLicznik);
+ END;
+
+ BEGIN
+ DBMS_OUTPUT.PUT_LINE (Zmienne.PokazLicznik);
+ Zmienne.ZmniejszLicznik;
+ DBMS_OUTPUT.PUT_LINE (Zmienne.PokazLicznik);
+ END;
+
+set serveroutput on
+BEGIN
+ DBMS_OUTPUT.PUT_LINE (Zmienne.PokazLicznik);
+ END;
+
+
+
+
+ --ZAD8
+ CREATE OR REPLACE PACKAGE IntZespoly AS
+    PROCEDURE AddTeam (id_z number, name_z varchar, adres_z varchar); 
+    PROCEDURE DelTeamId (id_z number);
+    PROCEDURE DelTeamName (name_z varchar);
+    PROCEDURE Modify (id_z number, name_z varchar, adres_z varchar);
+    FUNCTION GetId (name_z varchar)
+    RETURN number;
+    FUNCTION GetName_z (id_z number)
+    RETURN varchar;
+    FUNCTION GetAdress(id_z number)
+    RETURN varchar;
+END IntZespoly;
+
+CREATE OR REPLACE PACKAGE BODY IntZespoly AS
+    PROCEDURE AddTeam (id_z number, name_z varchar, adres_z varchar) IS
+    BEGIN
+        INSERT INTO zespoly (id_zesp, nazwa, adres)
+        VALUES(id_z, name_z, adres_z);
+    END AddTeam;
+    PROCEDURE DelTeamId (id_z number) IS
+    BEGIN
+        DELETE
+        FROM zespoly
+        WHERE id_zesp = id_z;
+    END DelTeamId;
+    PROCEDURE DelTeamName (name_z varchar) IS
+    BEGIN
+        DELETE
+        FROM zespoly
+        WHERE nazwa = name_z;
+    END DelTeamName;
+    PROCEDURE Modify (id_z number, name_z varchar, adres_z varchar) IS
+    BEGIN
+        UPDATE zespoly
+        SET adres = adres_z,
+            nazwa = name_z;
+    END Modify;
+    FUNCTION GetId (name_z varchar)
+    RETURN number IS id number;
+    BEGIN
+        select id_zesp
+        into id 
+        from zespoly 
+        where nazwa like name_z;
+    return id;
+    END GetId;
+    FUNCTION GetName_z (id_z number)
+    RETURN varchar IS name varchar(30);
+    BEGIN
+        select nazwa
+        into name
+        from zespoly 
+        where id_zesp like id_z;
+    return name;
+    END GetName_z;
+    FUNCTION GetAdress(id_z number)
+    RETURN varchar is adres_z varchar(30);
+    BEGIN
+        select adres
+        into adres_z
+        from zespoly 
+        where id_zesp like id_z;
+    return adres_z;
+    END GetAdress;
+END IntZespoly;
+
+set serveroutput on
+
+BEGIN
+ dbms_output.put_line(IntZespoly.GetId('ADMINISTRACJA'));
+ dbms_output.put_line(IntZespoly.GetName_z(10));
+ dbms_output.put_line(IntZespoly.GetAdress(20));
+END;
+
+BEGIN
+ IntZespoly.AddTeam(99, 'koxy', 'termalna 12');
+END;
+ select * from zespoly;
+
+BEGIN
+ IntZespoly.DelTeamId(99);
+END;
+ select * from zespoly;
+
+
+
+
+ --ZAD9
+SELECT object_name
+FROM User_Procedures
+WHERE object_type = 'PROCEDURE'
+ORDER BY object_name;
+
+SELECT object_name, status
+FROM User_Objects
+WHERE object_type = 'FUNCTION'
+ORDER BY object_name;
+
+SELECT object_name, object_type, status
+FROM User_Objects
+WHERE object_type IN ('PACKAGE', 'PACKAGE BODY')
+ORDER BY object_name;
+
+SELECT text
+FROM User_Source
+WHERE name = 'Zmienne'
+AND type = 'PACKAGE'
+ORDER BY line;
+
+SELECT text
+FROM User_Source
+WHERE name = 'NOWYPRACOWNIK'
+AND type = 'PROCEDURE'
+ORDER BY line;
+
+
+--ZAD10
+DROP FUNCTION Silnia;
+DROP FUNCTION IleLat;
+
+--ZAD11
+DROP PACKAGE Konwersja;
+

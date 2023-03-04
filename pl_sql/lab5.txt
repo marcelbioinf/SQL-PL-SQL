@@ -1,0 +1,176 @@
+--ZAD1--
+CREATE TABLE dziennik_operacji(
+data DATE,
+komunkat VARCHAR2(100),
+nazwa VARCHAR2(10),
+liczba_rekordow NUMBER);
+
+
+CREATE OR REPLACE TRIGGER LogujOperacje
+AFTER INSERT OR DELETE OR UPDATE ON Zespoly
+DECLARE
+ vKomunikat VARCHAR2(50);
+ vData DATE := CURRENT_DATE;
+ vNazwa VARCHAR2(10) := 'Zespoly';
+ vliczba_rekordow NUMBER;
+BEGIN
+ CASE
+ WHEN INSERTING THEN
+ vKomunikat := 'Wstawiono dane do tabeli Pracownicy!';
+ WHEN DELETING THEN
+ vKomunikat := 'Usunięto dane z tabeli Pracownicy!';
+ WHEN UPDATING THEN
+ vKomunikat := 'Zmieniono dane tabeli Pracownicy!';
+ END CASE;
+ SELECT count(*) into vliczba_rekordow FROM ZESPOLY;
+ INSERT INTO DZIENNIK_OPERACJI VALUES (vData, vKomunikat, vNazwa, vliczba_rekordow);
+END;
+
+UPDATE Zespoly
+SET nazwa = 'ADMINISTRACJA'
+WHERE id_zesp = 10;
+
+select * from DZIENNIK_OPERACJI;
+
+
+--ZAD2--
+CREATE OR REPLACE TRIGGER PokazPlace
+ BEFORE UPDATE OF placa_pod ON Pracownicy
+ FOR EACH ROW
+ WHEN ((OLD.placa_pod <> NEW.placa_pod) OR (NEW.placa_pod IS NULL) OR (OLD.placa_pod IS NULL and NEW.placa_pod is not null))
+BEGIN
+ DBMS_OUTPUT.PUT_LINE('Pracownik ' || :OLD.nazwisko);
+ DBMS_OUTPUT.PUT_LINE('Płaca przed modyfikacją: ' || :OLD.placa_pod);
+ DBMS_OUTPUT.PUT_LINE('Płaca po modyfikacji: ' || :NEW.placa_pod);
+END;
+
+UPDATE Pracownicy 
+SET placa_pod = 2000
+where nazwisko like 'MATYSIAK';
+
+
+--ZAD3--
+CREATE OR REPLACE TRIGGER Uzupelnij_place
+BEFORE INSERT OR UPDATE OF placa_pod, placa_dod ON Pracownicy
+FOR EACH ROW
+WHEN ((OLD.placa_pod <> NEW.placa_pod) OR (NEW.placa_pod IS NULL ) OR (NEW.placa_dod IS NULL) OR (OLD.placa_dod <> NEW.placa_dod))
+DECLARE
+ vplaca_pod NUMBER;
+ vplaca_dod NUMBER := 0;
+BEGIN
+CASE
+WHEN :NEW.etat is not null THEN
+    SELECT placa_min into vplaca_pod FROM ETATY WHERE nazwa=:NEW.etat;
+    --INSERT INTO PRACOWNICY(placa_pod, placa_dod) VALUES (vplaca_pod, vplaca_dod) where id_prac ;
+    IF (:NEW.placa_pod IS NULL) THEN
+        :NEW.placa_pod := vplaca_pod;
+    END IF;
+    IF (:NEW.placa_dod IS NULL) THEN
+        :NEW.placa_dod := vplaca_dod;
+    END IF;
+END CASE;
+END;
+
+INSERT INTO Pracownicy (id_prac, nazwisko, etat)
+VALUES( PRAC_SEQ.nextval, 'BUCZ', 'PROFESOR');
+
+select * from pracownicy;
+
+DELETE FROM PRacownicy where nazwisko like 'BUCZ';
+
+
+--ZAD4--
+CREATE SEQUENCE id_prac_seq
+INCREMENT BY 1
+START WITH 50;
+
+--DROP SEQUENCE id_prac_seq;
+
+CREATE OR REPLACE TRIGGER UzupelnijID
+BEFORE INSERT ON Zespoly
+FOR EACH ROW
+BEGIN
+CASE
+WHEN :NEW.id_zesp is null THEN
+    :NEW.id_zesp := ID_PRAC_SEQ.nextval; 
+END CASE;
+END;
+
+INSERT INTO Zespoly(nazwa, adres) VALUES('NOWY', 'brak');
+
+select * from zespoly;
+
+
+--ZAD5--
+CREATE OR REPLACE VIEW Szefowie (nazwisko, liczba_podwladnych) AS
+SELECT p.nazwisko, count(p.nazwisko)
+from pracownicy p inner join pracownicy pp
+on p.id_prac = pp.id_szefa
+group by p.nazwisko;
+
+select * from pracownicy;
+
+SELECT * FROM Szefowie;
+
+CREATE OR REPLACE TRIGGER Usun
+INSTEAD OF Delete ON Szefowie
+FOR EACH ROW
+DECLARE
+id_szefuncia NUMBER;
+BEGIN
+SELECT id_prac INTO id_szefuncia from pracownicy where nazwisko like :OLD.nazwisko;
+DELETE FROM PRACOWNICY
+where nazwisko like :OLD.nazwisko OR (nazwisko = (select nazwisko from pracownicy where id_szefa = id_szefuncia));
+END;
+
+SELECT * FROM Pracownicy WHERE id_prac = 140 OR id_szefa = 140;
+
+DELETE FROM Szefowie WHERE nazwisko='MORZY';
+
+ROLLBACK;
+
+--ZAD6--
+ALTER TABLE zespoly
+ADD liczba_pracownikow NUMBER;
+
+UPDATE ZESPOLY z
+SET LICZBA_PRACOWNIKOW = (select count(*) from pracownicy pra where pra.id_zesp = z.id_zesp );
+
+select * from zespoly;
+
+CREATE OR REPLACE TRIGGER Add_worker_to_team
+AFTER INSERT ON Pracownicy
+FOR EACH ROW
+BEGIN
+    UPDATE ZESPOLY z
+    set liczba_pracownikow = z.liczba_pracownikow + 1
+    where z.id_zesp = :NEW.id_zesp;
+END;
+
+DROP TRIGGER Uzupelnij_place;
+
+INSERT INTO Pracownicy(id_prac, nazwisko, id_zesp, id_szefa)
+ VALUES(300,'NOWY PRACOWNIK',40,120);
+
+SELECT * FROM Zespoly;
+
+CREATE OR REPLACE TRIGGER Delete_worker_from_team
+AFTER DELETE ON Pracownicy
+FOR EACH ROW
+BEGIN
+    UPDATE ZESPOLY z
+    set liczba_pracownikow = z.liczba_pracownikow - 1
+    where z.id_zesp = :OLD.id_zesp;
+END;
+
+DELETE FROM pracownicy where nazwisko like 'NOWY PRACOWNIK';
+
+
+--ZAD8--ZAD9--
+ALTER TABLE Pracownicy DISABLE ALL TRIGGERS;
+
+SELECT trigger_name, trigger_type, triggering_event, table_name,
+ when_clause, status
+ FROM User_Triggers
+ WHERE table_name IN ('PRACOWNICY', 'ZESPOLY')
+ ORDER BY table_name, trigger_name;

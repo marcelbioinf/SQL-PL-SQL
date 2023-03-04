@@ -1,0 +1,99 @@
+/*Zad1*/
+select * from ZESPOLY;
+
+/*Zad2*/
+select nazwisko, placa_pod * 12 
+from PRACOWNICY;
+
+/*Zad3*/
+select etat, placa_pod + coalesce(placa_dod, 0)
+from PRACOWNICY;
+
+/*Zad4*/
+select * from ZESPOLY
+order by nazwa;
+
+/*Zad5*/
+select distinct etat 
+from PRACOWNICY
+order by etat;
+
+/*Zad6*/
+select id_prac, nazwisko, etat, placa_pod, id_zesp
+from PRACOWNICY
+where id_zesp = 30 or id_zesp = 40
+order by placa_pod desc;
+
+/*Zad7*/
+select nazwisko, id_zesp, placa_pod
+from PRACOWNICY
+where placa_pod >= 300 and placa_pod <= 1000;
+
+/*Zad8*/
+select nazwisko, etat, id_zesp
+from PRACOWNICY 
+where nazwisko like '%SKI';
+
+/*Zad9*/
+select id_prac, id_szefa, nazwisko, placa_pod
+from PRACOWNICY
+where placa_pod > 1000 and id_szefa is not NULL;
+
+/*Zad10*/
+select nazwisko, id_zesp
+from PRACOWNICY
+where id_zesp = 20 and (nazwisko like 'M%'or nazwisko like '%SKI');
+
+/*Zad11*/
+select nazwisko, etat, (placa_pod / (8*20) ) as stawka
+from PRACOWNICY
+where etat not in('ASYSTENT', 'ADIUNKT', 'STAZYSTA') and
+(placa_pod not between 400 and 800)
+order by stawka asc;
+
+/*Zad12*/
+select min(placa_pod) as minimum, max(placa_pod) as maksimum,
+max(placa_pod) - min(placa_pod) as roznica
+from PRACOWNICY; 
+
+/*Zad13*/
+select etat, AVG(placa_pod) as srednia
+from PRACOWNICY
+group by etat
+order by srednia desc;
+
+/*Zad14*/
+select count(etat) as profesorowie
+from PRACOWNICY
+where etat like 'PROFESOR'
+group by etat;
+
+/*Zad15*/
+select id_zesp, sum(placa_pod) + sum(placa_dod) as sumaryczne_place
+from PRACOWNICY
+group by id_zesp
+order by id_zesp asc;
+
+/*Zad16*/
+select max((sum(placa_pod) + sum(placa_dod))) as maks_sum_placa
+from PRACOWNICY
+group by id_zesp;
+
+/*Zad17*/
+select id_szefa, min(placa_pod) as minimalna
+from PRACOWNICY
+group by id_szefa
+order by minimalna desc;
+
+/*Zad18*/
+select nazwisko, etat, p.id_zesp, adres
+from PRACOWNICY p inner join zespoly z
+on p.id_zesp = z.id_zesp
+where adres like 'PIOTROWO 3A'
+order by nazwisko;
+
+/*Zad19*/
+select nazwisko, adres, nazwa
+from pracownicy natural inner join zespoly
+where placa_pod > 400
+order by nazwisko;
