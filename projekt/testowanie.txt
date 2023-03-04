@@ -1,0 +1,43 @@
+--KOLEJNOSC DODAWANIA: PRACOWNIKÓW I KLIENTÓW I SAMOCHODY MOZNA DODAWAC NIEZALEŻNIE
+--                     ABY DODAĆ ADRES MUSI ISTNIEĆ PRACOWNIK LUB KLIENT
+--                     ABY DODAĆ ZAMÓWIENIE MUSI ISTNIEĆ PRACOWNIK I KLIENT I SAMOCHOD(NARAZIE NIEKONIECZNIE)
+--                     ABY DODAĆ PLATNOSĆ MUSI ISTNIEC ZAMOWINEIE
+
+--KLIENT
+insert into KLIENT values (1, '617864985', 'mb@wp.pl', 'Osoba fizyczna');
+insert into OSOBA_FIZYCZNA (Imie, nazwisko, data_urodzenia, nazwa_dzialalnosci, nip, numer_klienta) values('Marcel', 'BBB', TO_DATE('2003/05/03', 'yyyy/mm/dd'), 'AAA', '784849819', 1);
+select * from KLIENT;
+
+delete from KLIENT where KLIENT.NUMER_KLIENTA = 2;
+delete from OSOBA_FIZYCZNA where NUMER_KLIENTA = 2;
+
+select * from 
+OSOBA_FIZYCZNA NATURAL join KLIENT;
+--dodac ogranbiczenie typu klienta
+
+--ADRES 
+insert into ADRES values('Polska', 'Poznan', '62300', 'AAA', '56b', 22, 1, NULL);   --dodać ograniczenie na możliwośc dodania adresu bez numeru klienta lub bez peselu -JUZ JEST TAKIE OGRANICZENIE
+                                                                                             --ID ADRESU USUNIEYE
+select * from 
+KLIENT NATURAL join ADRES;
+
+select * from adres;
+
+--PRACOWNIK
+insert into Pracownik values('00233707118', 'Marcel', 'Buczkowski', TO_DATE('2003/05/03', 'yyyy/mm/dd'), 'aa', 4332.21, 313.22, '641548453', 'asas');
+select * from Pracownik;
+
+--SAMOCHOD
+insert into SAMOCHOD (VIN, Marka, Model, Rok_produkcji)values('12345678910121212', 'mercedes', 'g63amg', '2019');
+select * from samochod;
+
+--ZAMOWIENIE
+insert into ZAMOWIENIE values(1, TO_DATE('2003/05/03', 'yyyy/mm/dd'), null, 1, '00233707118' );  --WYMUS DODANIE NUMERU ZAMOWIENIA DO SAMOCHODU PO UTWORZENIU ZAMOWIENIA
+select * from zamowienie;
+
+UPDATE samochod set ZAMOWIENIE_NUMER_ZAMOWIENIA = 1
+where marka = 'mercedes';
+
+--PLATNOSC
+insert into platnosc values('aaa', 2121, 21, 1);
+select * from platnosc;
